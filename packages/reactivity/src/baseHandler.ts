@@ -1,4 +1,5 @@
 import { ReactiveFlags } from "./reactive"
+import { activeEffect } from "./effect"
 
 export const mutableHandlers = {
   get(target, key, receiver) {
