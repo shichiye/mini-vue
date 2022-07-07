@@ -4,6 +4,16 @@ export let activeEffect = undefined
 
 const targetMap = new WeakMap()
 
+function cleanupEffect(effect) {
+  const { deps } = effect
+  if (deps.length) {
+    for (let i = 0; i < deps.length; i++) {
+      deps[i].delete(effect)
+    }
+    effect.deps.length = 0
+  }
+}
+
 class ReactiveEffect {
   // 在实例上新增了active属性
   active = true
@@ -25,6 +35,10 @@ class ReactiveEffect {
       this.parent = activeEffect
       // 将当前的 effect 和 稍后渲染的属性关联在一起
       activeEffect = this
+
+      // 在执行函数之前将之前手机的内容清空
+      cleanupEffect(this)
+
       // 当稍后调用取值操作的时候，可以获取到全局的 activeEffect，进行依赖收集
       return this.fn()
     } finally {
@@ -74,11 +88,14 @@ export function trigger(
   const depsMap = targetMap.get(target)
   if (!depsMap) return
 
-  const effects = depsMap.get(key)
-  
-  effects && effects.forEach(effect => {
-    if (effect !== activeEffect) {
-      effect.run()
-    }
-  })
+  let effects = depsMap.get(key)
+
+  if (effects) {
+    effects = [...effects]
+    effects.forEach(effect => {
+      if (effect !== activeEffect) {
+        effect.run()
+      }
+    })
+  }
 }
