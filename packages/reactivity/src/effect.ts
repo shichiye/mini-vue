@@ -57,7 +57,7 @@ class ReactiveEffect {
 
 export function effect(fn, options?) {
 
-  const _effect = new ReactiveEffect(fn, options.scheduler)
+  const _effect = new ReactiveEffect(fn, options?.scheduler)
 
   _effect.run() // 默认执行一次
 
