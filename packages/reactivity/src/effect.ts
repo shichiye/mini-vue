@@ -19,7 +19,7 @@ class ReactiveEffect {
   active = true
   deps = []
   parent = undefined
-  constructor(public fn) {  // 加上 public 后，传入的fn也会加到实例上
+  constructor(public fn, public scheduler) {  // 加上 public 后，传入的fn也会加到实例上
     
   }
 
@@ -46,13 +46,26 @@ class ReactiveEffect {
       this.parent = undefined
     }
   }
+
+  stop() {
+    if (this.active) {
+      this.active = false
+      cleanupEffect(this)
+    }
+  }
 }
 
-export function effect(fn) {
+export function effect(fn, options?) {
 
-  const _effect = new ReactiveEffect(fn)
+  const _effect = new ReactiveEffect(fn, options.scheduler)
 
   _effect.run() // 默认执行一次
+
+  const runner = _effect.run.bind(_effect)
+
+  runner.effect = _effect
+
+  return runner
 }
 
 
@@ -94,7 +107,11 @@ export function trigger(
     effects = [...effects]
     effects.forEach(effect => {
       if (effect !== activeEffect) {
-        effect.run()
+        if (effect.scheduler) {
+          effect.scheduler()
+        } else {
+          effect.run()
+        }
       }
     })
   }
