@@ -14,7 +14,7 @@ function cleanupEffect(effect) {
   }
 }
 
-class ReactiveEffect {
+export class ReactiveEffect {
   // 在实例上新增了active属性
   active = true
   deps = []
@@ -81,12 +81,19 @@ export function track(target: object, type: TrackOpTypes, key: unknown) {
     depsMap.set(key, (dep = new Set()))
   }
 
-  let shouldTrack = !dep.has(activeEffect)
+  trackEffects(dep)
 
-  if (shouldTrack) {
-    dep.add(activeEffect)
-    // 让 effect 记录对应的属性，以便后续清除
-    activeEffect.deps.push(dep)
+}
+
+export function trackEffects(dep) {
+  if (activeEffect) {
+    let shouldTrack = !dep.has(activeEffect)
+
+    if (shouldTrack) {
+      dep.add(activeEffect)
+      // 让 effect 记录对应的属性，以便后续清除
+      activeEffect.deps.push(dep)
+    }
   }
 }
 
@@ -104,15 +111,19 @@ export function trigger(
   let effects = depsMap.get(key)
 
   if (effects) {
-    effects = [...effects]
-    effects.forEach(effect => {
-      if (effect !== activeEffect) {
-        if (effect.scheduler) {
-          effect.scheduler()
-        } else {
-          effect.run()
-        }
-      }
-    })
+    triggerEffects(effects)
   }
+}
+
+export function triggerEffects(effects) {
+  effects = [...effects]
+  effects.forEach(effect => {
+    if (effect !== activeEffect) {
+      if (effect.scheduler) {
+        effect.scheduler()
+      } else {
+        effect.run()
+      }
+    }
+  })
 }
